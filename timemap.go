@@ -39,9 +39,9 @@ func (t *Map) Set(key string, value interface{}, timestamp time.Time) bool {
 
 // Get looks up a key's value based on a timestamp.
 func (t *Map) Get(key string, timestamp time.Time) (value interface{}, ok bool) {
-	t.lock.Lock()
-	defer t.lock.Unlock()
-	if !t.Contains(key) {
+	t.lock.RLock()
+	defer t.lock.RUnlock()
+	if _, ok := t.timemap[key]; !ok {
 		return nil, false
 	}
 	ent, _ := t.timemap[key]
@@ -51,6 +51,8 @@ func (t *Map) Get(key string, timestamp time.Time) (value interface{}, ok bool) 
 
 // Contains checks if a key exists in the map.
 func (t *Map) Contains(key string) bool {
+	t.lock.RLock()
+	defer t.lock.RUnlock()
 	_, ok := t.timemap[key]
 	return ok
 }
@@ -59,7 +61,7 @@ func (t *Map) Contains(key string) bool {
 func (t *Map) Remove(key string) bool {
 	t.lock.Lock()
 	defer t.lock.Unlock()
-	if !t.Contains(key) {
+	if _, ok := t.timemap[key]; !ok {
 		return false
 	}
 	delete(t.timemap, key)
